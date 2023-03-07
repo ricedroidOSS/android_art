@@ -176,6 +176,14 @@ static void Thread_setPriority0(JNIEnv* env, jobject java_thread, jint new_prior
   Thread* thread = Thread::FromManagedThread(soa, java_thread);
   if (thread != nullptr) {
     thread->SetNativePriority(new_priority);
+    // Check whether the native Thread priority is consistent with the Java thread priority,
+    // if it is inconsistent, need to update the Java thread priority to Native priority
+    int native_priority = thread->GetNativePriority();
+    if (native_priority != new_priority) {
+      jclass cls = env->GetObjectClass(java_thread);
+      jfieldID filedID = env->GetFieldID(cls, "priority", "I");
+      env->SetIntField(java_thread, filedID, native_priority);
+    }
   }
 }
 
